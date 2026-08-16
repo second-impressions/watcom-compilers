@@ -85,4 +85,6 @@ RUN --mount=type=bind,source=archives/watcom-8.5,target=/archives/watcom-8.5,ro 
 FROM localhost/watcom-dosemu2-runtime AS base
 COPY --from=tree /opt/watcom /opt/watcom
 LABEL org.opencontainers.image.title="WATCOM C 8.5/386" \
-      org.opencontainers.image.description="WATCOM C 8.5/386 (1991) under dosemu2"
+      org.opencontainers.image.description="WATCOM C 8.5/386 (1991) under dosemu2" \
+      org.opencontainers.image.source="https://github.com/second-impressions/watcom-compilers"
+

@@ -34,19 +34,24 @@ FROM localhost/watcom-9.5c-dosemu2 AS watcom-c
 FROM localhost/watcom-wibo-runtime AS base
 COPY --from=watcom-base /opt/watcom /opt/watcom
 LABEL org.opencontainers.image.title="Watcom C/C++ 9.5 (wibo)" \
-      org.opencontainers.image.description="Watcom C/C++ 9.5 GA binnt/ under wibo"
+      org.opencontainers.image.description="Watcom C/C++ 9.5 GA binnt/ under wibo" \
+      org.opencontainers.image.source="https://github.com/second-impressions/watcom-compilers"
 
 FROM localhost/watcom-wibo-runtime AS a
 COPY --from=watcom-a /opt/watcom /opt/watcom
 LABEL org.opencontainers.image.title="Watcom C/C++ 9.5a (wibo)" \
-      org.opencontainers.image.description="Watcom C/C++ 9.5a binnt/ under wibo"
+      org.opencontainers.image.description="Watcom C/C++ 9.5a binnt/ under wibo" \
+      org.opencontainers.image.source="https://github.com/second-impressions/watcom-compilers"
 
 FROM localhost/watcom-wibo-runtime AS b
 COPY --from=watcom-b /opt/watcom /opt/watcom
 LABEL org.opencontainers.image.title="Watcom C/C++ 9.5b (wibo)" \
-      org.opencontainers.image.description="Watcom C/C++ 9.5b binnt/ under wibo"
+      org.opencontainers.image.description="Watcom C/C++ 9.5b binnt/ under wibo" \
+      org.opencontainers.image.source="https://github.com/second-impressions/watcom-compilers"
 
 FROM localhost/watcom-wibo-runtime AS c
 COPY --from=watcom-c /opt/watcom /opt/watcom
 LABEL org.opencontainers.image.title="Watcom C/C++ 9.5c (wibo)" \
-      org.opencontainers.image.description="Watcom C/C++ 9.5c binnt/ under wibo"
+      org.opencontainers.image.description="Watcom C/C++ 9.5c binnt/ under wibo" \
+      org.opencontainers.image.source="https://github.com/second-impressions/watcom-compilers"
+

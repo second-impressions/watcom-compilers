@@ -27,19 +27,24 @@ FROM localhost/watcom-11.0c-dosemu2 AS watcom-c
 FROM localhost/watcom-wibo-runtime AS base
 COPY --from=watcom-base /opt/watcom /opt/watcom
 LABEL org.opencontainers.image.title="Watcom C/C++ 11.0 (wibo)" \
-      org.opencontainers.image.description="Watcom C/C++ 11.0 binnt/ under wibo"
+      org.opencontainers.image.description="Watcom C/C++ 11.0 binnt/ under wibo" \
+      org.opencontainers.image.source="https://github.com/second-impressions/watcom-compilers"
 
 FROM localhost/watcom-wibo-runtime AS a
 COPY --from=watcom-a /opt/watcom /opt/watcom
 LABEL org.opencontainers.image.title="Watcom C/C++ 11.0a (wibo)" \
-      org.opencontainers.image.description="Watcom C/C++ 11.0a binnt/ under wibo"
+      org.opencontainers.image.description="Watcom C/C++ 11.0a binnt/ under wibo" \
+      org.opencontainers.image.source="https://github.com/second-impressions/watcom-compilers"
 
 FROM localhost/watcom-wibo-runtime AS b
 COPY --from=watcom-b /opt/watcom /opt/watcom
 LABEL org.opencontainers.image.title="Watcom C/C++ 11.0b (wibo)" \
-      org.opencontainers.image.description="Watcom C/C++ 11.0b binnt/ under wibo"
+      org.opencontainers.image.description="Watcom C/C++ 11.0b binnt/ under wibo" \
+      org.opencontainers.image.source="https://github.com/second-impressions/watcom-compilers"
 
 FROM localhost/watcom-wibo-runtime AS c
 COPY --from=watcom-c /opt/watcom /opt/watcom
 LABEL org.opencontainers.image.title="Watcom C/C++ 11.0c (wibo)" \
-      org.opencontainers.image.description="Watcom C/C++ 11.0 + 11.0c update binnt/ under wibo"
+      org.opencontainers.image.description="Watcom C/C++ 11.0 + 11.0c update binnt/ under wibo" \
+      org.opencontainers.image.source="https://github.com/second-impressions/watcom-compilers"
+

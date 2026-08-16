@@ -77,4 +77,6 @@ RUN --mount=type=bind,source=scripts/lib/prune-watcom-tree.sh,target=/tmp/prune.
 FROM localhost/watcom-dosemu2-runtime AS base
 COPY --from=tree-final /opt/watcom /opt/watcom
 LABEL org.opencontainers.image.title="Watcom C/C++ 10.6" \
-      org.opencontainers.image.description="Watcom C/C++ 10.6 GA (1996) under dosemu2"
+      org.opencontainers.image.description="Watcom C/C++ 10.6 GA (1996) under dosemu2" \
+      org.opencontainers.image.source="https://github.com/second-impressions/watcom-compilers"
+

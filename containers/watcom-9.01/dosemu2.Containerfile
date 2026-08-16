@@ -113,14 +113,18 @@ RUN --mount=type=bind,source=archives/watcom-9.01d/patches,target=/_patches,ro \
 FROM localhost/watcom-dosemu2-runtime AS base
 COPY --from=tree /opt/watcom /opt/watcom
 LABEL org.opencontainers.image.title="WATCOM C/386 9.01" \
-      org.opencontainers.image.description="WATCOM C/386 9.01 base (1992) under dosemu2"
+      org.opencontainers.image.description="WATCOM C/386 9.01 base (1992) under dosemu2" \
+      org.opencontainers.image.source="https://github.com/second-impressions/watcom-compilers"
 
 FROM localhost/watcom-dosemu2-runtime AS b
 COPY --from=b-tree /opt/watcom /opt/watcom
 LABEL org.opencontainers.image.title="WATCOM C/386 9.01b" \
-      org.opencontainers.image.description="WATCOM C/386 9.01 + patch level b (1992) under dosemu2"
+      org.opencontainers.image.description="WATCOM C/386 9.01 + patch level b (1992) under dosemu2" \
+      org.opencontainers.image.source="https://github.com/second-impressions/watcom-compilers"
 
 FROM localhost/watcom-dosemu2-runtime AS c
 COPY --from=c-tree /opt/watcom /opt/watcom
 LABEL org.opencontainers.image.title="WATCOM C/386 9.01c" \
-      org.opencontainers.image.description="WATCOM C/386 9.01 + patch levels b-c (1992) under dosemu2"
+      org.opencontainers.image.description="WATCOM C/386 9.01 + patch levels b-c (1992) under dosemu2" \
+      org.opencontainers.image.source="https://github.com/second-impressions/watcom-compilers"
+

@@ -63,4 +63,6 @@ WORKDIR /src
 ENTRYPOINT ["/usr/local/bin/watcom"]
 
 LABEL org.opencontainers.image.title="watcom-dosemu2-runtime" \
-      org.opencontainers.image.description="Shared dosemu2 runtime base for watcom-*-dosemu2 images"
+      org.opencontainers.image.description="Shared dosemu2 runtime base for watcom-*-dosemu2 images" \
+      org.opencontainers.image.source="https://github.com/second-impressions/watcom-compilers"
+

@@ -25,9 +25,12 @@ FROM localhost/watcom-10.0b-dosemu2 AS watcom-b
 FROM localhost/watcom-wibo-runtime AS base
 COPY --from=watcom-base /opt/watcom /opt/watcom
 LABEL org.opencontainers.image.title="Watcom C/C++ 10.0a (wibo)" \
-      org.opencontainers.image.description="Watcom C/C++ 10.0a binnt/ under wibo"
+      org.opencontainers.image.description="Watcom C/C++ 10.0a binnt/ under wibo" \
+      org.opencontainers.image.source="https://github.com/second-impressions/watcom-compilers"
 
 FROM localhost/watcom-wibo-runtime AS b
 COPY --from=watcom-b /opt/watcom /opt/watcom
 LABEL org.opencontainers.image.title="Watcom C/C++ 10.0b (wibo)" \
-      org.opencontainers.image.description="Watcom C/C++ 10.0b binnt/ under wibo"
+      org.opencontainers.image.description="Watcom C/C++ 10.0b binnt/ under wibo" \
+      org.opencontainers.image.source="https://github.com/second-impressions/watcom-compilers"
+

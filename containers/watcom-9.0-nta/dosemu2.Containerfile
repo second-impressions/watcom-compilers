@@ -59,4 +59,6 @@ RUN --mount=type=bind,source=archives/watcom-9.0/nt-alpha,target=/archives/watco
 FROM localhost/watcom-dosemu2-runtime AS base
 COPY --from=tree /opt/watcom /opt/watcom
 LABEL org.opencontainers.image.title="WATCOM C/386 9.0 NT Alpha" \
-      org.opencontainers.image.description="WATCOM C/386 9.0 NT Alpha (1992-02) under dosemu2"
+      org.opencontainers.image.description="WATCOM C/386 9.0 NT Alpha (1992-02) under dosemu2" \
+      org.opencontainers.image.source="https://github.com/second-impressions/watcom-compilers"
+

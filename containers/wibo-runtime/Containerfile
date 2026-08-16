@@ -92,4 +92,4 @@ ENTRYPOINT ["/usr/local/bin/watcom"]
 
 LABEL org.opencontainers.image.title="watcom-wibo-runtime" \
       org.opencontainers.image.description="wibo (built from our pinned fork) shared base for watcom-*-wibo images" \
-      org.opencontainers.image.source="https://github.com/second-impressions/wibo"
+      org.opencontainers.image.source="https://github.com/second-impressions/watcom-compilers"

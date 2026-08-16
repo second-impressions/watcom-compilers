@@ -17,10 +17,11 @@
 # reuses them rather than racing the same build. The build itself is the shared
 # composite action in .github/actions/watcom-images.
 #
-# NOTE ON LICENSING: a published image contains the proprietary Watcom media,
-# which this repository's AGPL does not cover and which is not ours to
-# redistribute. Packages produced here should stay private unless that has been
-# settled. See THIRD_PARTY.md.
+# NOTE ON LICENSING: a published image contains the proprietary Watcom media.
+# This repository's AGPL covers the build tooling only and does not extend to
+# those binaries; the image is an aggregate of separately licensed works. The
+# packages are published in the same preservation spirit as the Archive.org
+# item they are built from. See THIRD_PARTY.md.
 name: publish
 
 on:

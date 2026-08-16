@@ -90,4 +90,6 @@ RUN --mount=type=bind,source=archives/watcom-6.5,target=/archives/watcom-6.5,ro 
 FROM localhost/watcom-dosemu2-runtime AS base
 COPY --from=tree /opt/watcom /opt/watcom
 LABEL org.opencontainers.image.title="WATCOM C 6.5" \
-      org.opencontainers.image.description="WATCOM C 6.5 (1988, 16-bit DOS) under dosemu2"
+      org.opencontainers.image.description="WATCOM C 6.5 (1988, 16-bit DOS) under dosemu2" \
+      org.opencontainers.image.source="https://github.com/second-impressions/watcom-compilers"
+

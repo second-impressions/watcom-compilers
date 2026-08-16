@@ -49,6 +49,27 @@ and exits on completion; with no command and a TTY, the dosemu2 images drop you
 at a DOS prompt with `WATCOM` / `INCLUDE` / `PATH` pre-set and `F:\SRC` as the
 working directory.
 
+## Prebuilt images
+
+The toolchain images downstream projects use are published to the GitHub
+Container Registry, so you do not have to build anything to compile with them:
+
+```bash
+podman pull ghcr.io/second-impressions/watcom-10.0a-wibo
+podman run --rm -v "$PWD:/src" ghcr.io/second-impressions/watcom-10.0a-wibo \
+    wcl386 -l=dos4g hello.c
+```
+
+The shared bases (`watcom-toolchain`, `watcom-dosemu2-runtime`,
+`watcom-wibo-runtime`) are published too, tagged by a hash of their own
+definition; `scripts/build-images.sh --bases-from ghcr.io/second-impressions`
+reuses them so a local build skips recompiling wibo.
+
+These images contain the original proprietary compiler binaries, which this
+repository's licence does not cover — see [`THIRD_PARTY.md`](THIRD_PARTY.md).
+Build them yourself with the instructions below if you would rather not rely on
+a published artifact.
+
 ## Which image should I use?
 
 | | `*-wibo` | `*-dosemu2` |

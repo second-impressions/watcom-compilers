@@ -181,19 +181,24 @@ RUN --mount=type=bind,source=scripts/lib/prune-watcom-tree.sh,target=/tmp/prune.
 FROM localhost/watcom-dosemu2-runtime AS base
 COPY --from=base-tree-final /opt/watcom /opt/watcom
 LABEL org.opencontainers.image.title="Watcom C/C++ 11.0" \
-      org.opencontainers.image.description="Watcom C/C++ 11.0 under dosemu2"
+      org.opencontainers.image.description="Watcom C/C++ 11.0 under dosemu2" \
+      org.opencontainers.image.source="https://github.com/second-impressions/watcom-compilers"
 
 FROM localhost/watcom-dosemu2-runtime AS b
 COPY --from=b-tree-final /opt/watcom /opt/watcom
 LABEL org.opencontainers.image.title="Watcom C/C++ 11.0b" \
-      org.opencontainers.image.description="Watcom C/C++ 11.0b (final commercial release) under dosemu2"
+      org.opencontainers.image.description="Watcom C/C++ 11.0b (final commercial release) under dosemu2" \
+      org.opencontainers.image.source="https://github.com/second-impressions/watcom-compilers"
 
 FROM localhost/watcom-dosemu2-runtime AS a
 COPY --from=a-tree-final /opt/watcom /opt/watcom
 LABEL org.opencontainers.image.title="Watcom C/C++ 11.0a" \
-      org.opencontainers.image.description="Watcom C/C++ 11.0a (1997) under dosemu2"
+      org.opencontainers.image.description="Watcom C/C++ 11.0a (1997) under dosemu2" \
+      org.opencontainers.image.source="https://github.com/second-impressions/watcom-compilers"
 
 FROM localhost/watcom-dosemu2-runtime AS c
 COPY --from=c-tree-final /opt/watcom /opt/watcom
 LABEL org.opencontainers.image.title="Watcom C/C++ 11.0c" \
-      org.opencontainers.image.description="Watcom C/C++ 11.0 + 11.0c update under dosemu2"
+      org.opencontainers.image.description="Watcom C/C++ 11.0 + 11.0c update under dosemu2" \
+      org.opencontainers.image.source="https://github.com/second-impressions/watcom-compilers"
+

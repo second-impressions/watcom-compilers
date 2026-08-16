@@ -19,6 +19,18 @@ cover container layers containing those binaries — a built image is an
 aggregate of separately licensed works, and the AGPL applies only to the parts
 authored here.
 
+## Published container images
+
+The images at `ghcr.io/second-impressions/watcom-*` contain those proprietary
+binaries. They are published for the same software-preservation reasons as the
+Archive.org item they are built from, in good faith and without any claim to
+ownership of the compiler itself. Copyright in Watcom C/C++ rests with the
+successors-in-interest to Watcom/Sybase (Micro Focus / OpenText).
+
+Pulling an image does not grant you a licence to the compiler. If you intend to
+use it commercially, that is between you and the rights holder. Rights holders
+may request removal, and such requests will be honoured.
+
 ## Runtime/build dependencies
 
 - **dosemu2 / FDPP** — installed from the upstream dosemu2 Ubuntu PPA; their

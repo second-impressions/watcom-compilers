@@ -152,19 +152,24 @@ RUN --mount=type=bind,source=archives/watcom-9.5/patches,target=/_patches,ro \
 FROM localhost/watcom-dosemu2-runtime AS base
 COPY --from=base-tree /opt/watcom /opt/watcom
 LABEL org.opencontainers.image.title="Watcom C/C++ 9.5" \
-      org.opencontainers.image.description="Watcom C/C++ 9.5 GA under dosemu2"
+      org.opencontainers.image.description="Watcom C/C++ 9.5 GA under dosemu2" \
+      org.opencontainers.image.source="https://github.com/second-impressions/watcom-compilers"
 
 FROM localhost/watcom-dosemu2-runtime AS a
 COPY --from=a-tree /opt/watcom /opt/watcom
 LABEL org.opencontainers.image.title="Watcom C/C++ 9.5a" \
-      org.opencontainers.image.description="Watcom C/C++ 9.5 GA + patch level a under dosemu2"
+      org.opencontainers.image.description="Watcom C/C++ 9.5 GA + patch level a under dosemu2" \
+      org.opencontainers.image.source="https://github.com/second-impressions/watcom-compilers"
 
 FROM localhost/watcom-dosemu2-runtime AS b
 COPY --from=b-tree /opt/watcom /opt/watcom
 LABEL org.opencontainers.image.title="Watcom C/C++ 9.5b" \
-      org.opencontainers.image.description="Watcom C/C++ 9.5a + patch level b under dosemu2"
+      org.opencontainers.image.description="Watcom C/C++ 9.5a + patch level b under dosemu2" \
+      org.opencontainers.image.source="https://github.com/second-impressions/watcom-compilers"
 
 FROM localhost/watcom-dosemu2-runtime AS c
 COPY --from=c-tree /opt/watcom /opt/watcom
 LABEL org.opencontainers.image.title="Watcom C/C++ 9.5c" \
-      org.opencontainers.image.description="Watcom C/C++ 9.5b + patch level c under dosemu2"
+      org.opencontainers.image.description="Watcom C/C++ 9.5b + patch level c under dosemu2" \
+      org.opencontainers.image.source="https://github.com/second-impressions/watcom-compilers"
+

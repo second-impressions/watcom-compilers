@@ -18,4 +18,6 @@ FROM localhost/watcom-10.6-dosemu2 AS watcom
 FROM localhost/watcom-wibo-runtime AS base
 COPY --from=watcom /opt/watcom /opt/watcom
 LABEL org.opencontainers.image.title="Watcom C/C++ 10.6 (wibo)" \
-      org.opencontainers.image.description="Watcom C/C++ 10.6 GA binnt/ under wibo"
+      org.opencontainers.image.description="Watcom C/C++ 10.6 GA binnt/ under wibo" \
+      org.opencontainers.image.source="https://github.com/second-impressions/watcom-compilers"
+
