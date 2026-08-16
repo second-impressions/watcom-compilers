@@ -322,10 +322,9 @@ there is no CI-only code path in the repository.
   builds it, each documented `--target` resolves to a real stage, every
   bind-mounted artifact appears in `scripts/SHA256SUMS`, and nothing under
   `archives/` is tracked.
-- **`publish.yml`** builds, verifies and pushes the images downstream projects
-  consume to the GitHub Container Registry. The default set is what
-  `caesar2-reconstruction` needs: `watcom-10.0a-wibo` to compile and
-  `watcom-10.0a-dosemu2` to run the result.
+- **`publish.yml`** builds, verifies and pushes images to the GitHub Container
+  Registry. The default set is the Watcom 10.0a pair: `watcom-10.0a-wibo` to
+  compile DOS binaries and `watcom-10.0a-dosemu2` to run them.
 
 Third-party actions are pinned by commit SHA, matching how the base images are
 pinned by manifest digest.
@@ -355,7 +354,7 @@ cache miss costs time and never correctness.
 
 ## Documentation
 
-Most of what used to live in `docs/` now sits next to the thing it describes:
+Documentation sits next to the thing it describes:
 
 - `containers/wibo-runtime/Containerfile` — which wibo fork/commit is built, and why
 - `scripts/shims/wibo-shim.sh` — wibo's path, drive and DLL-search model

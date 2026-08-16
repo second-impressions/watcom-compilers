@@ -15,11 +15,11 @@ It does **not** correctly decode the 9.x-era archives (the 9.5 floppies,
 the February 1993 9.5 beta, 8.5, 9.01). Those carry the same 0x2403
 signature and the same version 1.1 header, parse cleanly, and pass the
 stored CRC — but the compressed stream is a variant this port does not
-reproduce, so the output is wrong. That failure used to be silent; it now
-raises WpackError whenever the decoded length does not match the
-directory, which catches most of these. Where the wrong output happens to
-land on the right length it cannot be detected from the archive alone,
-because the format stores no checksum of the decoded bytes.
+reproduce, so the output is wrong. WpackError is raised whenever the
+decoded length does not match the directory, which catches most of these.
+Where the wrong output happens to land on the right length it cannot be
+detected from the archive alone, because the format stores no checksum of
+the decoded bytes.
 
 For 9.x-era archives use the original DOS tool instead: wpack_unpack() in
 scripts/lib/common.sh runs the real wpack.exe under dosemu2. That is the

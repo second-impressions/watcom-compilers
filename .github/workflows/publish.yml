@@ -1,17 +1,21 @@
 # Copyright (C) 2026 Simon Brakhane
 # SPDX-License-Identifier: AGPL-3.0-or-later
 #
-# Publishes the toolchain image that downstream projects consume to the GitHub
-# Container Registry.
+# Publishes toolchain images to the GitHub Container Registry.
 #
-# The default is what second-impressions/caesar2-reconstruction consumes:
-# watcom-10.0a-wibo, which c2/buildenv.py drives.
+# The default publishes the two Watcom 10.0a images:
 #
-# Only that image is published. Its matching dosemu2 image is still built,
-# because the wibo image copies the extracted /opt/watcom tree out of it with
-# COPY --from — the wibo image's actual base is watcom-wibo-runtime
-# (debian-slim + wibo), and no dosemu2 content reaches the shipped layers.
-# scripts/build-images.sh resolves that prerequisite automatically.
+#   watcom-10.0a-wibo     compiles DOS binaries on Linux, running the Watcom
+#                         DOS tools under wibo. This is the one to consume for
+#                         building.
+#   watcom-10.0a-dosemu2  executes DOS binaries under dosemu2, for when the
+#                         output has to be run rather than only built.
+#
+# Publishing both is nearly free: the wibo image copies the extracted
+# /opt/watcom tree out of the dosemu2 one with COPY --from, so that image is
+# built either way. The wibo image's actual base is watcom-wibo-runtime
+# (debian-slim + wibo), and no dosemu2 content reaches its shipped layers.
+# scripts/build-images.sh resolves the dependency automatically.
 #
 # The shared bases are refreshed first by calling bases.yml, so this workflow
 # reuses them rather than racing the same build. The build itself is the shared
@@ -34,7 +38,7 @@ on:
       filter:
         description: 'Image tag regex to build and publish'
         required: false
-        default: '^watcom-10\.0a-wibo$'
+        default: '^watcom-10\.0a-(wibo|dosemu2)$'
       refresh-bases:
         description: 'Rebuild and republish the shared base images first'
         type: boolean
@@ -69,7 +73,7 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 120
     env:
-      IMAGE_FILTER: ${{ inputs.filter || '^watcom-10\.0a-wibo$' }}
+      IMAGE_FILTER: ${{ inputs.filter || '^watcom-10\.0a-(wibo|dosemu2)$' }}
       REGISTRY: ghcr.io/${{ github.repository_owner }}
     steps:
       - name: Check out
