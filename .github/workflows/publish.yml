@@ -1,0 +1,105 @@
+# Copyright (C) 2026 Simon Brakhane
+# SPDX-License-Identifier: AGPL-3.0-or-later
+#
+# Publishes the toolchain image that downstream projects consume to the GitHub
+# Container Registry.
+#
+# The default is what second-impressions/caesar2-reconstruction consumes:
+# watcom-10.0a-wibo, which c2/buildenv.py drives.
+#
+# Only that image is published. Its matching dosemu2 image is still built,
+# because the wibo image copies the extracted /opt/watcom tree out of it with
+# COPY --from — the wibo image's actual base is watcom-wibo-runtime
+# (debian-slim + wibo), and no dosemu2 content reaches the shipped layers.
+# scripts/build-images.sh resolves that prerequisite automatically.
+#
+# The shared bases are refreshed first by calling bases.yml, so this workflow
+# reuses them rather than racing the same build. The build itself is the shared
+# composite action in .github/actions/watcom-images.
+#
+# NOTE ON LICENSING: a published image contains the proprietary Watcom media,
+# which this repository's AGPL does not cover and which is not ours to
+# redistribute. Packages produced here should stay private unless that has been
+# settled. See THIRD_PARTY.md.
+name: publish
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'containers/**'
+      - 'scripts/**'
+      - '.github/actions/watcom-images/**'
+      - '.github/workflows/publish.yml'
+  workflow_dispatch:
+    inputs:
+      filter:
+        description: 'Image tag regex to build and publish'
+        required: false
+        default: '^watcom-10\.0a-wibo$'
+
+permissions:
+  contents: read
+  packages: write
+
+concurrency:
+  group: publish-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  # Refresh the shared bases first. If they are already current this is a fast
+  # no-op rebuild-and-repush; if a base changed in this push, it is published
+  # before the image below tries to reuse it.
+  bases:
+    uses: ./.github/workflows/bases.yml
+    permissions:
+      contents: read
+      packages: write
+
+  publish:
+    name: build and publish
+    needs: bases
+    runs-on: ubuntu-24.04
+    timeout-minutes: 120
+    env:
+      IMAGE_FILTER: ${{ inputs.filter || '^watcom-10\.0a-wibo$' }}
+      REGISTRY: ghcr.io/${{ github.repository_owner }}
+    steps:
+      - name: Check out
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      # Only the media these images need is fetched and cached; for the default
+      # image that is 2 files (~305 MB) rather than the full 54 (~3.4 GB), which
+      # keeps repeat runs off archive.org almost entirely.
+      - name: Build and verify
+        uses: ./.github/actions/watcom-images
+        with:
+          filter: ${{ env.IMAGE_FILTER }}
+          cache-key: publish
+          bases-from: ghcr.io/${{ github.repository_owner }}
+          registry-token: ${{ secrets.GITHUB_TOKEN }}
+          registry-user: ${{ github.actor }}
+
+      - name: Log in to GHCR
+        run: |
+          printf '%s' '${{ secrets.GITHUB_TOKEN }}' \
+            | podman login ghcr.io -u '${{ github.actor }}' --password-stdin
+
+      - name: Push
+        run: |
+          scripts/push-images.sh "$REGISTRY" \
+            --filter "$IMAGE_FILTER" \
+            --tag "sha-${GITHUB_SHA::7}"
+
+      - name: Summary
+        run: |
+          {
+            echo "### Published to \`$REGISTRY\`"
+            echo
+            echo '| image | tags |'
+            echo '|---|---|'
+            scripts/push-images.sh "$REGISTRY" --filter "$IMAGE_FILTER" \
+              --tag "sha-${GITHUB_SHA::7}" --dry-run \
+              | awk '{print $4}' | sort -u \
+              | sed 's#^\(.*\):\(.*\)$#| `\1` | `\2` |#'
+          } >> "$GITHUB_STEP_SUMMARY"

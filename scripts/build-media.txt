@@ -1,0 +1,58 @@
+# Source artifacts needed to build every container image.
+#
+# Paths are looked up in scripts/SHA256SUMS by fetch-sources.sh (same directory).
+# Every artifact comes from the consolidated Archive.org item.
+archives/watcom-6.5/Watcom C.ver.6.5.English.zip
+archives/watcom-8.5/Watcom C 386.ver.8.5.English.zip
+archives/watcom-9.0/nt-alpha/WC90NTA1.ZIP
+archives/watcom-9.0/nt-alpha/WC90NTA2.ZIP
+archives/watcom-9.0/nt-alpha/WC90NTA3.ZIP
+archives/watcom-9.0/nt-alpha/WC90NTA4.ZIP
+archives/watcom-9.01/floppies/Disk01.img
+archives/watcom-9.01/floppies/Disk02.img
+archives/watcom-9.01/floppies/Disk03.img
+archives/watcom-9.01/floppies/Disk04.img
+archives/watcom-9.01/floppies/Disk05.img
+archives/watcom-9.01/floppies/Disk06.img
+archives/watcom-9.01d/Watcom - C++ 9.01d.zip
+archives/watcom-9.01d/patches/c386_b.zip
+archives/watcom-9.01d/patches/c386_c.zip
+archives/watcom-9.01d/patches/c386_e.zip
+archives/watcom-9.5/floppies/W9516_01.img
+archives/watcom-9.5/floppies/W9516_02.img
+archives/watcom-9.5/floppies/W9516_03.img
+archives/watcom-9.5/floppies/W9516_04.img
+archives/watcom-9.5/floppies/W9532_01.img
+archives/watcom-9.5/floppies/W9532_02.img
+archives/watcom-9.5/floppies/W9532_03.img
+archives/watcom-9.5/floppies/W9532_04.img
+archives/watcom-9.5/floppies/W9532_05.img
+archives/watcom-9.5/floppies/W9532_06.img
+archives/watcom-9.5/floppies/W9532_07.img
+archives/watcom-9.5/floppies/W9532_08.img
+archives/watcom-9.5/floppies/W9532_09.img
+archives/watcom-9.5/floppies/W9532_10.img
+archives/watcom-9.5/floppies/OS2TK_1.img
+archives/watcom-9.5/floppies/OS2TK_2.img
+archives/watcom-9.5/floppies/OS2TK_3.img
+archives/watcom-9.5/floppies/OS2TK_4.img
+archives/watcom-9.5/floppies/OS2TK_5.img
+archives/watcom-9.5/floppies/OS2TK_6.img
+archives/watcom-9.5/patches/c16_a.zip
+archives/watcom-9.5/patches/c16_b.zip
+archives/watcom-9.5/patches/c16_c.zip
+archives/watcom-9.5/patches/c32_a.zip
+archives/watcom-9.5/patches/c32_b.zip
+archives/watcom-9.5/patches/c32_c.zip
+archives/watcom-10.0-la/watcom10la.iso
+archives/watcom-10.0/discmaster/Sybase - Watcom C++ 10.0.zip
+archives/watcom-10.0/WATCOM_C10A.ISO
+archives/watcom-10.0/patches/c_b.zip
+archives/watcom-10.5/Watcom_C++_10.5.iso
+archives/watcom-10.5/patches/c105_a.zip
+archives/watcom-10.6/WATCOM_C106.iso
+archives/watcom-10.6a/Sybase - Watcom C++ 10.6a.zip
+archives/watcom-11.0/Sybase - Watcom C++ 11.0.zip
+archives/watcom-11.0/patches/Sybase - Watcom C++ 11.0c Update.zip
+archives/watcom-11.0a/WatcomC11a.iso
+archives/watcom-11.0b/WATCOM_C11B.iso

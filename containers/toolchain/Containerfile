@@ -1,0 +1,114 @@
+# syntax=docker/dockerfile:1
+# Copyright (C) 2026 Simon Brakhane
+# SPDX-License-Identifier: AGPL-3.0-or-later
+#
+# Toolchain container image.
+#
+# Contains the two Watcom tools needed by every downstream extract stage
+# (wpack for unpacking WPK archives, bpatch for applying Watcom binary
+# patches) plus the host utilities and dosemu2 runtime needed to invoke
+# them.
+#
+# The two tools are the original Watcom distribution binaries, extracted
+# from the distribution media (downloaded by scripts/fetch-sources.sh):
+#
+#   - wpack.exe  from archives/watcom-10.0/WATCOM_C10A.ISO (DISK01/WPACK.EXE),
+#                a plain MZ real-mode DOS executable.
+#   - bpatch.exe from archives/watcom-9.5/floppies/W9532_03.img (BPATCH.WPK),
+#                unpacked by the above wpack.exe during this build. A
+#                hybrid DOS/OS2 1.x NE executable with a functional
+#                real-mode DOS stub.
+#
+# Both tools are executed via dosemu2 by the shell shims in
+# scripts/shims/ that downstream stages install.
+#
+# Reproducibility notes
+# =====================
+# The Ubuntu base image is pinned by manifest digest rather than the
+# `24.04` tag, because tags are mutable. Everything else floats within
+# the boundaries set by that pinned digest:
+#
+#   - Ubuntu main/universe packages follow the base image's snapshot.
+#   - dosemu2 / fdpp / comcom64 from ppa:dosemu2/ppa are deliberately
+#     NOT version-pinned: the PPA publishes new snapshot builds roughly
+#     weekly and rotates older versions out, so pinning would break
+#     this build every few weeks for no real reproducibility benefit.
+#   - scripts/fetch-sources.sh downloads archives/ from the consolidated
+#     Archive.org preservation item and verifies every file against
+#     scripts/SHA256SUMS before the build starts.
+#   - The two extracted Watcom tools are not hash-verified at build
+#     time either; extraction is deterministic and the source archive
+#     is already trusted.
+#
+# Build:
+#   podman build -t localhost/watcom-toolchain:latest \
+#       -f containers/toolchain/Containerfile .
+
+# Ubuntu 24.04 LTS (Noble) pinned by manifest digest.
+# Update with:
+#   podman pull docker.io/library/ubuntu:24.04
+#   podman inspect docker.io/library/ubuntu:24.04 \
+#       --format '{{index .RepoDigests 0}}'
+FROM docker.io/library/ubuntu@sha256:84e77dee7d1bc93fb029a45e3c6cb9d8aa4831ccfcc7103d36e876938d28895b
+
+ENV DEBIAN_FRONTEND=noninteractive \
+    TZ=UTC
+
+# Host utilities:
+#   - ca-certificates, gnupg, software-properties-common :
+#     add-apt-repository + PPA signing key verification
+#   - libarchive-tools (bsdtar) : read ISO 9660 images without mount
+#   - mtools                     : read FAT12 floppy images without mount
+#   - unzip                      : extract archives/*/patches/*.zip
+#   - python3                    : run helper scripts
+#   - file, bash, coreutils      : utility and debugging
+#
+# dosemu2 comes from the official upstream PPA (ppa:dosemu2/ppa),
+# maintained by the dosemu2 developers themselves. It pulls in fdpp
+# and comcom64 automatically.
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends \
+        ca-certificates \
+        gnupg \
+        software-properties-common \
+        libarchive-tools \
+        mtools \
+        unzip \
+        python3 \
+        file \
+        bash \
+        coreutils \
+    && add-apt-repository -y ppa:dosemu2/ppa \
+    && apt-get update \
+    && apt-get install -y --no-install-recommends dosemu2 \
+    && apt-get purge -y software-properties-common gnupg \
+    && apt-get autoremove -y \
+    # dosemu2 hard-depends on libsdl2, which drags in the full
+    # mesa-libgallium + libllvm20 stack (~180 MB) and the
+    # timgm6mb-soundfont (~6 MB) for SDL's audio/video init paths.
+    # We only ever run dosemu2 in `-dumb` mode (no video, no audio),
+    # so those paths are dead code. dpkg --force-depends lets us drop
+    # them without satisfying the SDL2 depends chain. Verified: -dumb
+    # mode + wpack.exe + bpatch.exe all still work.
+    && dpkg --purge --force-depends \
+        libllvm20:amd64 \
+        mesa-libgallium:amd64 \
+        timgm6mb-soundfont \
+    && rm -rf /var/lib/apt/lists/*
+
+# The two source archives that the bootstrap needs are bind-mounted
+# read-only during the build RUN rather than COPY'd. A COPY would bake
+# the 303 MB ISO into its own layer, and the subsequent delete would
+# only add a whiteout — the layer itself (and the 303 MB) would persist
+# in every image that builds FROM this one. The bind-mount approach
+# exposes the archives to the build step without ever materialising
+# them into a layer.
+COPY scripts/build-toolchain.sh /usr/local/bin/build-toolchain.sh
+RUN --mount=type=bind,source=archives/watcom-10.0/WATCOM_C10A.ISO,target=/archives/watcom-10.0/WATCOM_C10A.ISO,ro \
+    --mount=type=bind,source=archives/watcom-9.5/floppies/W9532_03.img,target=/archives/watcom-9.5/floppies/W9532_03.img,ro \
+    chmod +x /usr/local/bin/build-toolchain.sh && /usr/local/bin/build-toolchain.sh
+
+# /opt/watcom-tools/ now contains wpack.exe and bpatch.exe.
+ENV WATCOM_TOOLS=/opt/watcom-tools
+
+CMD ["/bin/bash"]

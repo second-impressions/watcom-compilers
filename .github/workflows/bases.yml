@@ -1,0 +1,83 @@
+# Copyright (C) 2026 Simon Brakhane
+# SPDX-License-Identifier: AGPL-3.0-or-later
+#
+# Publishes the three shared base images so the other workflows do not rebuild
+# them on every run.
+#
+# Rebuilding them dominates a cold build — measured on a runner:
+# watcom-wibo-runtime 229s (it compiles wibo with clang), watcom-toolchain 51s,
+# watcom-dosemu2-runtime 34s, against ~8s for the per-version images stacked on
+# top. Reusing them took a publish run's build step from 323s to 17s.
+#
+# Each is published under a content tag derived from its Containerfile and the
+# files that Containerfile copies in (build-images.sh base_content_tag), so
+# --bases-from reuses a base only while it is genuinely unchanged; bumping
+# WIBO_COMMIT changes the wibo tag and the reuse misses accordingly.
+#
+# There is no public image to start from instead: dosemu2 comes from a PPA that
+# nobody ships prebuilt, and the compilers are proprietary media that may not be
+# redistributed at all.
+#
+# Callable, so publish.yml can depend on it rather than racing it.
+name: bases
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'containers/toolchain/**'
+      - 'containers/dosemu2-runtime/**'
+      - 'containers/wibo-runtime/**'
+      - 'scripts/shims/**'
+      - 'scripts/build-toolchain.sh'
+      - '.github/actions/watcom-images/**'
+      - '.github/workflows/bases.yml'
+  workflow_dispatch:
+  workflow_call:
+
+permissions:
+  contents: read
+  packages: write
+
+concurrency:
+  group: bases-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  bases:
+    name: build and publish bases
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+    steps:
+      - name: Check out
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      # '^$' selects no per-version image; the shared bases are built
+      # unconditionally because everything else depends on them. Only the
+      # toolchain consumes media, so this is a small fetch, and there is nothing
+      # to run the image matrix against yet.
+      - name: Build bases
+        uses: ./.github/actions/watcom-images
+        with:
+          filter: '^$'
+          cache-key: bases
+          verify: 'false'
+
+      - name: Log in to GHCR
+        run: |
+          printf '%s' '${{ secrets.GITHUB_TOKEN }}' \
+            | podman login ghcr.io -u '${{ github.actor }}' --password-stdin
+
+      - name: Push bases
+        run: scripts/push-images.sh "ghcr.io/${{ github.repository_owner }}" --bases
+
+      - name: Summary
+        run: |
+          {
+            echo "### Base images published"
+            echo
+            echo '| image | content tag |'
+            echo '|---|---|'
+            scripts/build-images.sh --print-base-tags \
+              | sed 's#^\(.*\)\t\(.*\)$#| `\1` | `\2` |#'
+          } >> "$GITHUB_STEP_SUMMARY"

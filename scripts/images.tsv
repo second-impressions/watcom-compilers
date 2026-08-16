@@ -1,0 +1,52 @@
+# Image build table -- the single source of truth for what this repo builds.
+#
+# Consumed by scripts/build-images.sh (what to build, in order) and by
+# scripts/fetch-sources.sh --filter (which media an image needs). Keeping one
+# table means a new image cannot be added to the build without the fetcher and
+# the media selection following automatically.
+#
+# tag<TAB>containerfile<TAB>target   ('-' = no --target)
+
+watcom-toolchain:latest	containers/toolchain/Containerfile	-
+watcom-dosemu2-runtime:latest	containers/dosemu2-runtime/Containerfile	base
+watcom-wibo-runtime:latest	containers/wibo-runtime/Containerfile	runtime
+watcom-6.5-dosemu2	containers/watcom-6.5/dosemu2.Containerfile	base
+watcom-8.5-dosemu2	containers/watcom-8.5/dosemu2.Containerfile	base
+watcom-9.0-nta-dosemu2	containers/watcom-9.0-nta/dosemu2.Containerfile	base
+watcom-9.01-dosemu2	containers/watcom-9.01/dosemu2.Containerfile	base
+watcom-9.01b-dosemu2	containers/watcom-9.01/dosemu2.Containerfile	b
+watcom-9.01c-dosemu2	containers/watcom-9.01/dosemu2.Containerfile	c
+watcom-9.01d-dosemu2	containers/watcom-9.01d/dosemu2.Containerfile	base
+watcom-9.01e-dosemu2	containers/watcom-9.01d/dosemu2.Containerfile	e
+watcom-9.5-dosemu2	containers/watcom-9.5/dosemu2.Containerfile	base
+watcom-9.5a-dosemu2	containers/watcom-9.5/dosemu2.Containerfile	a
+watcom-9.5b-dosemu2	containers/watcom-9.5/dosemu2.Containerfile	b
+watcom-9.5c-dosemu2	containers/watcom-9.5/dosemu2.Containerfile	c
+watcom-10.0-la-dosemu2	containers/watcom-10.0-la/dosemu2.Containerfile	base
+watcom-10.0-ga-dosemu2	containers/watcom-10.0-ga/dosemu2.Containerfile	base
+watcom-10.0a-dosemu2	containers/watcom-10.0/dosemu2.Containerfile	base
+watcom-10.0b-dosemu2	containers/watcom-10.0/dosemu2.Containerfile	b
+watcom-10.5-dosemu2	containers/watcom-10.5/dosemu2.Containerfile	base
+watcom-10.5a-dosemu2	containers/watcom-10.5/dosemu2.Containerfile	a
+watcom-10.6-dosemu2	containers/watcom-10.6/dosemu2.Containerfile	base
+watcom-10.6a-dosemu2	containers/watcom-10.6a/dosemu2.Containerfile	base
+watcom-11.0-dosemu2	containers/watcom-11.0/dosemu2.Containerfile	base
+watcom-11.0a-dosemu2	containers/watcom-11.0/dosemu2.Containerfile	a
+watcom-11.0b-dosemu2	containers/watcom-11.0/dosemu2.Containerfile	b
+watcom-11.0c-dosemu2	containers/watcom-11.0/dosemu2.Containerfile	c
+watcom-9.5-wibo	containers/watcom-9.5/wibo.Containerfile	base
+watcom-9.5a-wibo	containers/watcom-9.5/wibo.Containerfile	a
+watcom-9.5b-wibo	containers/watcom-9.5/wibo.Containerfile	b
+watcom-9.5c-wibo	containers/watcom-9.5/wibo.Containerfile	c
+watcom-10.0-la-wibo	containers/watcom-10.0-la/wibo.Containerfile	base
+watcom-10.0-ga-wibo	containers/watcom-10.0-ga/wibo.Containerfile	base
+watcom-10.0a-wibo	containers/watcom-10.0/wibo.Containerfile	base
+watcom-10.0b-wibo	containers/watcom-10.0/wibo.Containerfile	b
+watcom-10.5-wibo	containers/watcom-10.5/wibo.Containerfile	base
+watcom-10.5a-wibo	containers/watcom-10.5/wibo.Containerfile	a
+watcom-10.6-wibo	containers/watcom-10.6/wibo.Containerfile	base
+watcom-10.6a-wibo	containers/watcom-10.6a/wibo.Containerfile	base
+watcom-11.0-wibo	containers/watcom-11.0/wibo.Containerfile	base
+watcom-11.0a-wibo	containers/watcom-11.0/wibo.Containerfile	a
+watcom-11.0b-wibo	containers/watcom-11.0/wibo.Containerfile	b
+watcom-11.0c-wibo	containers/watcom-11.0/wibo.Containerfile	c

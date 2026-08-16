@@ -1,0 +1,18 @@
+# Downloaded compiler media.
+#
+# archives/ is purely a download target: scripts/fetch-sources.sh populates it
+# from the Archive.org item and verifies every file against scripts/SHA256SUMS.
+# Nothing under it is ever committed — provenance for each artifact lives in
+# the Containerfile that consumes it.
+/archives/
+
+# Build logs and the image inventory written by scripts/build-images.sh.
+/.cache/
+
+# Nix dev shell (flake.nix) and its direnv/devenv caches.
+/.envrc
+/.direnv/
+/.devenv/
+
+# Byte-code from running the scripts/lib helpers directly on the host.
+__pycache__/

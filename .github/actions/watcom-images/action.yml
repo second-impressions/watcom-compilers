@@ -1,0 +1,130 @@
+# Copyright (C) 2026 Simon Brakhane
+# SPDX-License-Identifier: AGPL-3.0-or-later
+#
+# Shared build step for every workflow here: prepare the runner, restore and
+# verify the media a selection of images needs, build them, and optionally run
+# the verification matrix over the same selection.
+#
+# All three workflows (pr, publish, bases) do the same thing and differ only in
+# which images they select and what they do with the result, so the procedure
+# lives here once rather than being copied into each of them.
+#
+# The caller must have checked the repository out already: a local action cannot
+# be resolved before that.
+name: Build Watcom images
+description: Fetch media, build a selection of images, and optionally verify them.
+
+inputs:
+  filter:
+    description: >-
+      Image tag regex. The same expression selects media, images and tests, so
+      they cannot disagree. Use '^$' to build only the shared bases.
+    required: true
+  cache-key:
+    description: Discriminator for the media cache (e.g. the matrix group name).
+    required: true
+  bases-from:
+    description: >-
+      Registry holding prebuilt shared bases. Anything that cannot be retrieved
+      is built instead, so this is only ever an optimisation.
+    required: false
+    default: ''
+  registry-token:
+    description: Token used to log in for base reuse. Optional; login failure is not fatal.
+    required: false
+    default: ''
+  registry-user:
+    description: User for the base-reuse login.
+    required: false
+    default: ''
+  verify:
+    description: Run the verification matrix over the selection.
+    required: false
+    default: 'true'
+
+runs:
+  using: composite
+  steps:
+    # Reported before and after so the need for this stays evidence-based; the
+    # runner starts with ~25 GB free and only the largest preinstalled tree is
+    # dropped, which is cheaper than clearing everything.
+    - name: Reclaim runner disk
+      shell: bash
+      run: |
+        echo "before:"
+        df -h / | tail -1
+        sudo rm -rf /usr/local/lib/android || true
+        echo "after:"
+        df -h / | tail -1
+
+    - name: Install Nix
+      if: inputs.verify == 'true'
+      uses: cachix/install-nix-action@13d8dd58da0234aa297dedd986986ccb8e7f3e24 # v31.11.1
+
+    # A stale or partial cache is safe: fetch-sources.sh verifies every file
+    # against scripts/SHA256SUMS and re-downloads anything missing or corrupt,
+    # so a cache miss costs time and never correctness.
+    - name: Restore compiler media
+      uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+      with:
+        path: archives
+        key: media-${{ inputs.cache-key }}-${{ hashFiles('scripts/SHA256SUMS', 'scripts/build-media.txt', 'scripts/images.tsv') }}
+        restore-keys: |
+          media-${{ inputs.cache-key }}-
+
+    - name: Fetch and verify media
+      shell: bash
+      run: scripts/fetch-sources.sh --filter '${{ inputs.filter }}'
+
+    # Best-effort: pull requests from forks have no package access, and a base
+    # whose definition changed in this very branch has no published build yet.
+    # Either way build-images.sh falls back to building it.
+    - name: Log in for base reuse
+      if: inputs.bases-from != '' && inputs.registry-token != ''
+      continue-on-error: true
+      shell: bash
+      run: |
+        printf '%s' '${{ inputs.registry-token }}' \
+          | podman login ghcr.io -u '${{ inputs.registry-user }}' --password-stdin
+
+    - name: Build images
+      shell: bash
+      run: |
+        args=(--skip-fetch --filter '${{ inputs.filter }}')
+        if [ -n '${{ inputs.bases-from }}' ]; then
+          args+=(--bases-from '${{ inputs.bases-from }}')
+        fi
+        scripts/build-images.sh "${args[@]}"
+
+    - name: Disk after build
+      if: always()
+      shell: bash
+      run: df -h / | tail -1
+
+    # WATCOM_IMAGE_FILTER takes the same regex as the steps above. bats' own
+    # --filter matches test descriptions rather than image tags, so an anchored
+    # tag regex would quietly select nothing there.
+    - name: Verify images
+      if: inputs.verify == 'true'
+      shell: bash
+      env:
+        WATCOM_IMAGE_FILTER: ${{ inputs.filter }}
+      run: |
+        nix run .#test -- --formatter tap | tee /tmp/bats.tap
+        ran=$(grep -cE '^(ok|not ok) ' /tmp/bats.tap || true)
+        if [ "$ran" -eq 0 ]; then
+          echo "::error::no tests ran - the filter selected nothing"
+          exit 1
+        fi
+        echo "$ran assertions ran"
+
+    - name: Build logs
+      if: failure()
+      shell: bash
+      run: |
+        for f in .cache/build-logs/*.log; do
+          [ -e "$f" ] || continue
+          echo "::group::$f"
+          tail -80 "$f"
+          echo "::endgroup::"
+        done

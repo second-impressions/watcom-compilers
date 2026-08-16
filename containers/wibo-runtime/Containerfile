@@ -1,0 +1,95 @@
+# syntax=docker/dockerfile:1.4
+# Copyright (C) 2026 Simon Brakhane
+# SPDX-License-Identifier: AGPL-3.0-or-later
+#
+# watcom-wibo-runtime — shared base for every watcom-*-wibo image.
+#
+# wibo is built FROM SOURCE here, from our fork
+# (https://github.com/second-impressions/wibo) pinned to an exact
+# commit, then combined with the wibo-shim entrypoint on a slim Debian
+# base.  Per-version watcom-*/wibo.Containerfile files derive from this
+# image and only COPY /opt/watcom in from the matching dosemu2 image.
+#
+# Why a fork rather than upstream's release binary: the stock release
+# drops extensionless files from FindFirstFile("*.*") enumeration, which
+# breaks `wmake` (it scans the directory that way to find its makefile),
+# and it lacks the kernel32 lstr* family.  The fork's `compilers-support`
+# branch is upstream decompals/wibo plus that eventually-upstreamable
+# series — the same branch the sibling msvc-compilers repo builds.
+# The branch is five commits on top of upstream; read them at
+# https://github.com/second-impressions/wibo/commits/compilers-support
+#
+# Build:
+#     podman build -t localhost/watcom-wibo-runtime \
+#         -f containers/wibo-runtime/Containerfile .
+
+# =============================================================================
+# wibo-build — build our pinned wibo fork from source.
+# =============================================================================
+# Alpine 3.20 pinned by manifest digest.  Update with:
+#   podman pull docker.io/library/alpine:3.20
+#   podman inspect docker.io/library/alpine:3.20 \
+#       --format '{{index .RepoDigests 0}}'
+FROM docker.io/library/alpine@sha256:c64c687cbea9300178b30c95835354e34c4e4febc4badfe27102879de0483b5e AS wibo-build
+
+# Alpine packages ninja at /usr/lib/ninja-build/bin/ninja; PATH-fix it.
+ENV PATH=/usr/lib/ninja-build/bin:/usr/bin:/bin:/usr/sbin:/sbin \
+    CLANG_ROOT=/usr
+
+RUN apk add --no-cache \
+        bash git \
+        clang lld llvm-dev clang-dev clang-static \
+        cmake ninja-build \
+        python3 py3-pip py3-virtualenv \
+        musl-dev linux-headers
+
+# Our wibo fork, pinned by exact commit.  `compilers-support` is the
+# integration branch; the SHA below is what this repo is tested against,
+# so a branch move cannot silently change the toolchain.
+ARG WIBO_REPO=https://github.com/second-impressions/wibo.git
+ARG WIBO_COMMIT=6f19e52fa406b8ad80874f4eadcd7c7b583850d2
+
+# Clone, pin and build in a single layer: no source tree, no .git and no
+# build tree survive into the image below.
+RUN git clone "${WIBO_REPO}" /wibo \
+ && git -C /wibo checkout --detach "${WIBO_COMMIT}" \
+ && cmake -S /wibo -B /wibo/build -G Ninja \
+        -DCMAKE_BUILD_TYPE=Release \
+        -DCMAKE_TOOLCHAIN_FILE=/wibo/cmake/toolchains/x86_64-alpine-linux-musl.cmake \
+        -DCLANG_ROOT=/usr \
+        -DWIBO_ENABLE_LIBURING=OFF \
+ && cmake --build /wibo/build \
+ && ls -la /wibo/build/wibo
+
+# =============================================================================
+# runtime — slim Debian + freshly-built wibo + shim.
+# =============================================================================
+# Debian bookworm-slim pinned by manifest digest.  Update with:
+#   podman pull docker.io/library/debian:bookworm-slim
+#   podman inspect docker.io/library/debian:bookworm-slim \
+#       --format '{{index .RepoDigests 0}}'
+FROM docker.io/library/debian@sha256:362e64223cc0da95422b3b13c045186fc0a81250e765d31c025fbddf257f6143 AS runtime
+
+ENV DEBIAN_FRONTEND=noninteractive \
+    TZ=UTC \
+    WATCOM_ROOT=/opt/watcom \
+    WORK_DIR=/src \
+    WIBO=/usr/local/bin/wibo
+
+# Only bash + coreutils are needed at runtime; the wibo binary is
+# statically linked.
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends bash coreutils \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/*
+
+COPY --from=wibo-build /wibo/build/wibo /usr/local/bin/wibo
+COPY scripts/shims/wibo-shim.sh /usr/local/bin/watcom
+RUN chmod +x /usr/local/bin/wibo /usr/local/bin/watcom
+
+WORKDIR /src
+ENTRYPOINT ["/usr/local/bin/watcom"]
+
+LABEL org.opencontainers.image.title="watcom-wibo-runtime" \
+      org.opencontainers.image.description="wibo (built from our pinned fork) shared base for watcom-*-wibo images" \
+      org.opencontainers.image.source="https://github.com/second-impressions/wibo"

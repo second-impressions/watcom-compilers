@@ -1,0 +1,129 @@
+# Copyright (C) 2026 Simon Brakhane
+# SPDX-License-Identifier: AGPL-3.0-or-later
+#
+# PR builder: proves a pull request does not break the compilers that work.
+#
+# Every step runs the same scripts a developer runs locally
+# (scripts/fetch-sources.sh, scripts/build-images.sh, the flake's test app).
+# There is no CI-only code path in the repository; the only things this file
+# adds are the media cache and the runner housekeeping around them.
+#
+# The 40 images are split into five groups of eight so they build in parallel.
+# Each group fetches only the media its own images need, which is what makes
+# per-group caching worthwhile -- see scripts/fetch-sources.sh --filter.
+name: pr
+
+on:
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+  packages: read
+
+concurrency:
+  group: pr-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  static:
+    name: static checks
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Check out
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Shell syntax
+        run: |
+          find scripts tests -name '*.sh' -print0 \
+            | xargs -0 -n1 bash -n
+          bash -n tests/lib/watcom.bash
+
+      - name: Python syntax
+        run: |
+          find scripts -name '*.py' -print0 \
+            | xargs -0 -n1 python3 -m py_compile
+
+      - name: Repository consistency
+        run: |
+          # Every image in the build table must be named in the header of the
+          # Containerfile that builds it, and every documented --target must
+          # resolve to a real stage. These drift silently otherwise.
+          rc=0
+          while IFS=$'\t' read -r tag file target; do
+            [ -z "$tag" ] && continue
+            case "$tag" in \#*) continue ;; esac
+            name="${tag%%:*}"
+            grep -q -- "$name" "$file" || {
+              echo "::error file=$file::$name is built from this file but not named in its header"
+              rc=1
+            }
+            if [ "$target" != "-" ]; then
+              grep -qE "^FROM .* AS ${target}\$" "$file" || {
+                echo "::error file=$file::--target $target does not match any stage"
+                rc=1
+              }
+            fi
+          done < scripts/images.tsv
+
+          # Media referenced by a Containerfile must exist in the checksum
+          # manifest, or the fetcher will refuse it at build time.
+          grep -rhoE 'source=archives/[^,[:space:]]+' containers \
+            | sed 's/^source=//' | sort -u \
+            | while read -r prefix; do
+                grep -q "  ${prefix}" scripts/SHA256SUMS \
+                  || grep -q "  ${prefix}/" scripts/SHA256SUMS \
+                  || { echo "::error::$prefix is mounted by a Containerfile but absent from scripts/SHA256SUMS"; exit 1; }
+              done || rc=1
+          exit $rc
+
+      - name: No media committed
+        run: |
+          if [ -n "$(git ls-files archives)" ]; then
+            echo "::error::archives/ must never be tracked; it is a download target"
+            git ls-files archives
+            exit 1
+          fi
+          big=$(git ls-tree -r -l HEAD | awk '$4 > 1048576 {print $4" "$5}')
+          if [ -n "$big" ]; then
+            echo "::error::blobs larger than 1 MiB are tracked:"
+            echo "$big"
+            exit 1
+          fi
+
+  images:
+    name: ${{ matrix.group }}
+    needs: static
+    runs-on: ubuntu-24.04
+    timeout-minutes: 120
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - group: early
+            filter: '^watcom-(6\.5|8\.5|9\.0-nta|9\.01|9\.01[bcde])-'
+          - group: '9.5'
+            filter: '^watcom-9\.5[abc]?-'
+          - group: '10.0'
+            filter: '^watcom-10\.0(-la|-ga|a|b)-'
+          - group: '10.5-10.6'
+            filter: '^watcom-10\.(5a?|6a?)-'
+          - group: '11.0'
+            filter: '^watcom-11\.0[abc]?-'
+    steps:
+      - name: Check out
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      # Same composite action the publish and bases workflows use, so all three
+      # share one definition of fetch/build/verify. Base reuse is best-effort:
+      # a fork PR has no package access, and a PR that changes a base gets a
+      # new content tag and so builds it locally -- which is what we want, since
+      # the change has to be exercised.
+      - name: Build and verify
+        uses: ./.github/actions/watcom-images
+        with:
+          filter: '${{ matrix.filter }}'
+          cache-key: '${{ matrix.group }}'
+          bases-from: ghcr.io/${{ github.repository_owner }}
+          registry-token: ${{ secrets.GITHUB_TOKEN }}
+          registry-user: ${{ github.actor }}

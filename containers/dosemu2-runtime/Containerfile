@@ -1,0 +1,66 @@
+# syntax=docker/dockerfile:1.4
+# Copyright (C) 2026 Simon Brakhane
+# SPDX-License-Identifier: AGPL-3.0-or-later
+#
+# watcom-dosemu2-runtime — shared base for every watcom-*-dosemu2 image.
+#
+# Layers: Ubuntu 24.04 + dosemu2 (+ a few CLI helpers) + the dosemu2
+# shim entrypoint.  No /opt/watcom; each per-version dosemu2.Containerfile
+# COPYs that in from its tree-producing stage.
+#
+# Build:
+#     podman build -t localhost/watcom-dosemu2-runtime \
+#         -f containers/dosemu2-runtime/Containerfile .
+#
+# Relationship to the existing watcom-toolchain image
+# ---------------------------------------------------
+# `watcom-toolchain` exists for the BUILD side of the pipeline: it
+# hosts the original Watcom installers, dosemu2, mtools, libarchive,
+# Python (for wpack/iso_extract/etc.) and is used as `FROM` by the
+# tree-producing stages in every dosemu2.Containerfile.  Tree stages
+# extract `/opt/watcom` and (optionally) prune it.
+#
+# `watcom-dosemu2-runtime` is the RUNTIME side: it has only what's
+# needed to launch a Watcom DOS-host tool via dosemu2 — dosemu2, bash,
+# coreutils, and the shim.  None of the extractor tools.  This keeps
+# the shipping images smaller and decouples runtime upgrades (e.g.
+# bumping dosemu2) from extractor-tool upgrades.
+
+# Ubuntu 24.04 LTS (Noble) pinned by manifest digest — the same digest
+# containers/toolchain/Containerfile uses, so both sides of the build share
+# an identical base.  Update with:
+#   podman pull docker.io/library/ubuntu:24.04
+#   podman inspect docker.io/library/ubuntu:24.04 \
+#       --format '{{index .RepoDigests 0}}'
+FROM docker.io/library/ubuntu@sha256:84e77dee7d1bc93fb029a45e3c6cb9d8aa4831ccfcc7103d36e876938d28895b AS base
+
+ENV DEBIAN_FRONTEND=noninteractive \
+    TZ=UTC
+
+# dosemu2 lives in a PPA on Ubuntu.
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends \
+        ca-certificates gnupg software-properties-common \
+        bash coreutils \
+    && add-apt-repository -y ppa:dosemu2/ppa \
+    && apt-get update \
+    && apt-get install -y --no-install-recommends dosemu2 \
+    && apt-get purge -y software-properties-common gnupg \
+    && apt-get autoremove -y \
+    && dpkg --purge --force-depends \
+        libllvm20:amd64 \
+        mesa-libgallium:amd64 \
+        timgm6mb-soundfont \
+    && rm -rf /var/lib/apt/lists/*
+
+ENV WATCOM_ROOT=/opt/watcom \
+    WORK_DIR=/src
+
+COPY scripts/shims/dosemu2-shim.sh /usr/local/bin/watcom
+RUN chmod +x /usr/local/bin/watcom
+
+WORKDIR /src
+ENTRYPOINT ["/usr/local/bin/watcom"]
+
+LABEL org.opencontainers.image.title="watcom-dosemu2-runtime" \
+      org.opencontainers.image.description="Shared dosemu2 runtime base for watcom-*-dosemu2 images"
