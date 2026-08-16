@@ -24,20 +24,22 @@
 # item they are built from. See THIRD_PARTY.md.
 name: publish
 
+# Manual only. Publishing on every push to main spent build minutes rebuilding
+# images whose inputs had not changed, and raced the bases workflow for the
+# same concurrency group. Pull requests are already verified by pr.yml; this is
+# for when a new image is actually wanted downstream.
 on:
-  push:
-    branches: [main]
-    paths:
-      - 'containers/**'
-      - 'scripts/**'
-      - '.github/actions/watcom-images/**'
-      - '.github/workflows/publish.yml'
   workflow_dispatch:
     inputs:
       filter:
         description: 'Image tag regex to build and publish'
         required: false
         default: '^watcom-10\.0a-wibo$'
+      refresh-bases:
+        description: 'Rebuild and republish the shared base images first'
+        type: boolean
+        required: false
+        default: false
 
 permissions:
   contents: read
@@ -48,10 +50,11 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
-  # Refresh the shared bases first. If they are already current this is a fast
-  # no-op rebuild-and-repush; if a base changed in this push, it is published
-  # before the image below tries to reuse it.
+  # Opt-in: refresh the shared bases before building. Off by default because
+  # they rarely change and reusing them is what makes a publish run fast; turn
+  # it on when a base definition or the wibo pin has moved.
   bases:
+    if: inputs.refresh-bases
     uses: ./.github/workflows/bases.yml
     permissions:
       contents: read
@@ -59,7 +62,10 @@ jobs:
 
   publish:
     name: build and publish
+    # Runs whether or not the optional bases job did; `always()` keeps it from
+    # being skipped when that job is, while still waiting for it when it runs.
     needs: bases
+    if: always() && (needs.bases.result == 'success' || needs.bases.result == 'skipped')
     runs-on: ubuntu-24.04
     timeout-minutes: 120
     env:

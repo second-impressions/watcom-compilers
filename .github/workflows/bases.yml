@@ -19,19 +19,15 @@
 # redistributed at all.
 #
 # Callable, so publish.yml can depend on it rather than racing it.
+#
+# Manual only. These images change rarely, a run costs ~5 minutes of build time
+# even when nothing changed, and --bases-from already falls back to building
+# anything it cannot retrieve -- so a stale publish costs time, never
+# correctness. Run this after changing a base's Containerfile, one of the shims,
+# scripts/build-toolchain.sh, or the pinned WIBO_COMMIT.
 name: bases
 
 on:
-  push:
-    branches: [main]
-    paths:
-      - 'containers/toolchain/**'
-      - 'containers/dosemu2-runtime/**'
-      - 'containers/wibo-runtime/**'
-      - 'scripts/shims/**'
-      - 'scripts/build-toolchain.sh'
-      - '.github/actions/watcom-images/**'
-      - '.github/workflows/bases.yml'
   workflow_dispatch:
   workflow_call:
 
